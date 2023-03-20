@@ -166,14 +166,13 @@
         type="text"
         placeholder="Name"
         />
-        <button class="captureBtn" onclick="captureAndDownload();">Capture</button>
+        <button class="captureBtn" onclick="updatePORTs();captureAndDownload();">Capture</button>
     </div>
     <script>
         const bitContainer = document.getElementById('bit-container');
         const bitLabelsContainer = document.getElementById('bit-labels-container');  
         const imageContainer = document.getElementById('imageContainer');
 
-        const input = document.getElementById('inputName');	
         const decimalValue = document.getElementById('decimal-value');
         const hexValue = document.getElementById('hex-value');
 		
@@ -204,12 +203,13 @@
             bitContainer.appendChild(bit);
         }
         function updatePORTs(){
-		const bitLabel = document.querySelectorAll('.bit-label');
-		bitLabel.forEach(function(e, index){
-			e.value = 'P' + input.value.slice(-1) + (7-index);
-		};
-	  }
-	  function updateBitStyles(bit) {
+            const bitLabel = document.querySelectorAll('.bit-label');
+            const input = document.getElementById('inputName');
+            bitLabel.forEach(function(e, index){
+                e.value = 'P' + input.value.slice(-1).toUpperCase() + (7-index);
+		    });
+	    }
+        function updateBitStyles(bit) {
             if (bit.dataset.value === '0') {
                 bit.style.backgroundColor = 'black';
                 bit.style.color = 'white';
@@ -229,6 +229,7 @@
         }
         function captureAndDownload() {
             const element = document.getElementById('capture');
+            const input = document.getElementById('inputName');	
             const inputvalue = input.value;          
 
             const tempContainer = document.createElement('div');
