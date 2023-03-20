@@ -1,0 +1,248 @@
+<!-- ICSL 박기완 제작-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8-bit PORT Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.3/html2canvas.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            flex-direction: column;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            background-color: white;
+            padding: 20px;
+            padding-bottom: 10px;
+            border-radius: 8px;
+            height: 60px;
+        }
+
+        .input-name {
+            height: 32px;
+            font-size: 15px;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            outline: none;
+            padding-left: 10px;
+            background-color: rgb(255 255 255);
+        }
+
+        .bit-container {
+            display: flex;
+            margin-right: 20px;
+        }
+
+        .bit, .bit-label {
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            margin: 0 3px;
+            user-select: none;
+            cursor: pointer;
+            border: 1px solid black;
+            border-radius: 4px;
+        }
+
+        .bit[data-value="0"] {
+            background-color: black;
+            color: white;
+        }
+
+        .bit[data-value="1"] {
+            background-color: white;
+            color: black;
+        }
+        .value-display{
+            min-width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            margin: 0 3px;
+            padding: 0 5px;
+            border: 1px solid black;
+            border-radius: 4px;            
+            background: #00427F;
+            color: white;
+        }
+        input.bit-label {
+            border: none;
+            margin: 0 4px;
+            box-sizing: border-box;
+        }
+        .bit-labels {
+            margin-top: -30px;
+        }
+        .num {
+            margin-top: -25px;
+        }
+        .num-title {
+            text-align: center;
+            font-size: 13px;
+            padding-bottom: 9px;
+        }
+        .tempContainer{
+            font-size: 32px;
+            line-height: 32px;
+            font-weight: bold;
+            margin-right: 15px;
+            text-transform: uppercase;
+        }
+        .sub-container {
+            display: flex;
+            justify-content: space-between;
+            width: 350px;
+            align-items: baseline;
+            flex-direction: row;
+        }
+        button.captureBtn {
+            background: #fff;
+            margin-top: 20px;
+            font-size: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+        button.captureBtn:hover {
+            box-shadow: 2px 4px 3px 0px #ddd;
+        }
+        div#imageContainer:before {
+            content: 'IMG output';
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        div#imageContainer {
+            transform: scale(0.8);
+            margin-bottom: 20px;
+            border: 1px solid #999;
+            padding: 10px;
+            background: #00427F;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+    <div id="imageContainer">
+        
+    </div>
+    <div class="container" id="capture">
+        <div class="bit-labels">
+            <div id="bit-labels-container"></div>
+            <div class="bit-container" id="bit-container">
+                <!-- The 8-bit boxes will be created by JavaScript -->
+            </div>
+        </div>
+        <div class="num">
+            <div class="num-title">DEC</div>
+            <div class="value-display" id="decimal-value">0</div>
+        </div>
+        <div class="num">
+            <div class="num-title">HEX</div>
+            <div class="value-display" id="hex-value">0x00</div>
+        </div>
+    </div>
+    <div class="sub-container">
+        <input
+        class="input-name"
+        id="inputName"
+        type="text"
+        placeholder="Name"
+        />
+        <button class="captureBtn" onclick="captureAndDownload()">Capture</button>
+    </div>
+    <script>
+        const bitContainer = document.getElementById('bit-container');
+        const bitLabelsContainer = document.getElementById('bit-labels-container');  
+        const imageContainer = document.getElementById('imageContainer');
+        const decimalValue = document.getElementById('decimal-value');
+        const hexValue = document.getElementById('hex-value');
+
+
+        for (let i = 0; i < 8; i++) { 
+            const bitLabel = document.createElement('input');
+
+            bitLabel.classList.add('bit-label');
+            bitLabel.type = 'text';
+            bitLabel.value = 'PD'+ (7-i);
+            bitLabel.size = '1';
+            bitLabel.maxLength = '3';
+            bitLabelsContainer.appendChild(bitLabel);
+
+            
+            const bit = document.createElement('div');       
+            bit.classList.add('bit');
+            bit.dataset.value = '0';
+            bit.textContent = '0';
+            bit.addEventListener('click', () => {
+                const newValue = bit.dataset.value === '0' ? '1' : '0';
+                bit.dataset.value = newValue;
+                bit.textContent = newValue;
+                updateBitStyles(bit);
+                updateValues();
+            });
+            bitContainer.appendChild(bit);
+        }
+        function updateBitStyles(bit) {
+            if (bit.dataset.value === '0') {
+                bit.style.backgroundColor = 'black';
+                bit.style.color = 'white';
+            } else {
+                bit.style.backgroundColor = 'white';
+                bit.style.color = 'black';
+            }
+        }
+        function updateValues() {
+            let binaryValue = Array.from(bitContainer.children).map(bit => bit.dataset.value).join('');
+
+            const decimal = parseInt(binaryValue, 2);
+            const hex = decimal.toString(16).toUpperCase().padStart(2, '0');
+
+            decimalValue.textContent = `${decimal}`;
+            hexValue.textContent = `0x${hex}`;
+        }
+        function captureAndDownload() {
+            const element = document.getElementById('capture');
+            const input = document.getElementById('inputName')
+            const inputvalue = input.value;          
+
+            const tempContainer = document.createElement('div');
+            tempContainer.className = 'tempContainer';
+            tempContainer.innerText = inputvalue;
+            element.insertBefore(tempContainer, element.firstChild);
+
+            html2canvas(element).then((canvas) => {
+                const link = document.createElement('a');
+                const imgTag = document.createElement('img');
+                imgTag.src = canvas.toDataURL('image/png');
+                // link.href = canvas.toDataURL('image/png');
+                // link.download = 'capture.png';
+                // link.click();
+                
+                imageContainer.innerHTML='';
+                imageContainer.appendChild(imgTag);
+                element.removeChild(tempContainer);
+                canvas.toBlob(blob => navigator.clipboard.write([new ClipboardItem({"image/png": blob})]));
+            });
+            input.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
