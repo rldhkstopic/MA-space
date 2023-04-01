@@ -1,7 +1,7 @@
-;  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
 .INCLUDE "m128def.inc"
 
-.DSEG
+.DSEG;  
+
     .EQU F_CPU = 16000000
     .EQU LCD_INST = 0x8000
     .EQU LCD_DATA = 0x8002
