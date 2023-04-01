@@ -7,20 +7,28 @@
     .EQU LCD_INST_PTR = 0x8000
     .EQU LCD_DATA_PTR = 0x8002
 
-    .DEF CHD = R20
-    .DEF COL = R21
-    .DEF ROW = R22
+    .DEF CHD = R16
+    .DEF COL = R17
+    .DEF ROW = R18
+    .DEF CHE = R19
 
     .DEF str = R26
     .DEF strIndex = R27
 
+	.MACRO LCD_CHARS
+		LDI CHE, @0
+		CALL LCD_CHAR
+	.ENDMACRO
+
+	.MACRO LCD_POS
+		LDI COL, @0
+		LDI ROW, @1
+		CALL LCD_CURSUR
+	.ENDMACRO
+
 .CSEG
     .ORG 0x0000
         RJMP LOOP
-
-    .ORG 0x0046
-        uStr : .DB "HELLO", 0x00
-        lStr : .DB "WORLD", 0x00
 
     LOOP: 
         LDI R16, LOW(RAMEND)
@@ -29,19 +37,21 @@
         OUT SPH, R16
 
         LDI R16, 0x80   
-        OUT MCUCR, R16          ; 1000 0000
+        OUT MCUCR, R16 
 
         CALL LCD_INIT
 
-        LDI COL, 0
-        LDI ROW, 0
-        CALL LCD_POS
-        CALL LCD_CHAR
+        LCD_POS 0, 0
+        LCD_CHARS 'L'
 
-        LDI COL, 0
-        LDI ROW, 1
-        CALL LCD_POS
-        CALL LCD_CHAR
+		LCD_POS 0, 1
+        LCD_CHARS 'O'
+
+		LCD_POS 0, 2
+        LCD_CHARS 'V'
+
+		LCD_POS 1, 2
+        LCD_CHARS 'E'
 
     INFINITE:
         RJMP INFINITE    
@@ -49,7 +59,7 @@
     LCD_INIT: ; void
         LDI CHD, 0x38
         CALL LCD_COMM   ; LCD_comm(0x38)
-        LDI CHD, 0x0C
+        LDI CHD, 0x0D
         CALL LCD_COMM   ; LCD_comm(0x0C)
         LDI CHD, 0x06
         CALL LCD_COMM   ; LCD_comm(0x06)
@@ -65,31 +75,20 @@
         RET
 
     LCD_COMM: ; char ch
-        CALL LCD_INST
+        STS LCD_INST_PTR, CHD
         CALL D5MS
         RET
 
-	LCD_INST:
-        PUSH R16
-        ;LDI R16, CHD
-        STS LCD_INST_PTR, CHD
-        POP R16
-		RET
-
     LCD_DATA:
-        PUSH R16
-        ;LDI R16, CHD
-        STS LCD_DATA_PTR, CHD
-        POP R16
+        STS LCD_DATA_PTR, CHE
 		RET
 
     LCD_CHAR:
-        LDI CHD, 'L'
         CALL LCD_DATA
         CALL D50US
         RET
     
-    LCD_POS:  ; char col, char row
+    LCD_CURSUR: 			
         PUSH R16   
         PUSH R17    
         PUSH R18  
@@ -99,11 +98,11 @@
         MOV R18, ROW    ; move ROW to R18
 		LDI R19, 0x40
 
-        MUL R18, R19   ; R18 <- ROW * 0x40
+        MUL R18, R19    ; R18 <- ROW * 0x40
         ADD R17, R18    ; R17 <- COL + ROW * 0x40
         ORI R17, 0x80   ; R17 <- 0x80|(COL + ROW * 0x40)
 
-        MOV CHD, R17     ; CH <- R17
+        MOV CHD, R17    ; CH <- R17
         CALL LCD_COMM   ; call LCD_COMM with CH in R16
         
 		POP R19
@@ -112,9 +111,6 @@
         POP R16         
 
         RET             ; return. 
-
-
-
 
 
 
