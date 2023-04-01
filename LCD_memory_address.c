@@ -42,11 +42,7 @@ void LCD_init(void)
 int main(void)
 {
 	char str[20]="LCD test..      ";
-	MCUCR = 0x80; // Address and data bus
-	LCD_init(); 
-	LCD_pos(0,0);
-	sprintf(str,"Hello");
-	LCD_STR(str);
+	LCD_STR(str[0]);
 	LCD_pos(0,1);
 	sprintf(str,"World");
 	LCD_STR(str);
