@@ -115,18 +115,19 @@ LCD_STR_end:
     RET
 
 LCD_pos:
-    LDI charData, 0x80
-    ADD charData, COL
-    
-    LSL ROW
-    LSL ROW
-    LSL ROW
-    LSL ROW
-    LSL ROW
-    LSL ROW
-    
-    ADD charData, ROW
-    CALL LCD_comm
+    PUSH R1
+    PUSH R2
+    MOV R2, R24   ; col을 R24 레지스터에 복사
+    MOV R1, R22   ; row를 R22 레지스터에 복사
+    LSL R1        ; row * 0x40
+    LSL R1
+    LSL R1
+    LSL R1
+    LSL R1
+    OR R2, R1     ; col + row * 0x40
+    CALL LCD_comm ; LCD_comm(0x80|(col+row*0x40));
+    POP R2
+    POP R1
     RET
 
 LCD_clear:
