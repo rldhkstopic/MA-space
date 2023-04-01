@@ -111,7 +111,7 @@ LCD_STR:
     BREQ LCD_STR_end
     CALL LCD_CHAR
     RJMP LCD_STR
-LCD_STR_end:
+LCD_STR_end:asd
     RET
 
 LCD_pos:
