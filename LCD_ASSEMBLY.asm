@@ -1,373 +1,153 @@
+.nolist
 .INCLUDE "m128def.inc"
-
-.DSEG;  
-
-    .EQU F_CPU = 16000000
-    .EQU LCD_INST = 0x8000
-    .EQU LCD_DATA = 0x8002
-
-    .DEF charData = R16
-    .DEF COL = R17
-    .DEF ROW = R18
-
-    .DEF RegCnt = R23
-    .DEF xRegL = R24
-    .DEF xRegH = R25
-
-    .DEF strPtr = R26
-    .DEF strIndex = R27
-
-    .MACRO _delay ; 0~254
-        PUSH R23
-        PUSH R24
-        PUSH R25
-
-        LDI RegCnt, @0
-        CALL DELAY_S
-
-        POP R23
-        POP R24
-        POP R25
-    .ENDMACRO
-
-    .MACRO _delay_ms ; 0~254 ms
-        PUSH R23
-        PUSH R24
-        PUSH R25
-
-        LDI RegCnt, @0
-        CALL DELAY_MS
-
-        POP R23
-        POP R24
-        POP R25
-    .ENDMACRO
-
-    .MACRO _delay_us ; 0~254 us
-        PUSH R23
-        PUSH R24
-        PUSH R25
-
-        LDI RegCnt, @0
-        CALL DELAY_US
-
-        POP R23
-        POP R24
-        POP R25
-	.ENDMACRO
-
-.CSEG
-.ORG 0x0000
-    RJMP LOOP
-
-.ORG 0x0046	
-	upperStr: .db "Hello", 0x00
-	lowerStr: .db "World", 0x00
-	
-
-LOOP:
-    LDI R16, LOW(RAMEND)
-    OUT SPL, R16
-    LDI R16, HIGH(RAMEND)
-    OUT SPH, R16
-
-    LDI charData, 0x80
-    OUT MCUCR, charData
-
-    CALL LCD_init
-
-    LDI strPtr, LOW(upperStr)
-    LDI strIndex, HIGH(upperStr)
-    LDI COL, 0
-    LDI ROW, 0
-    CALL LCD_pos
-    CALL LCD_STR
-
-    LDI strPtr, LOW(lowerStr)
-    LDI strIndex, HIGH(lowerStr)
-    LDI COL, 0
-    LDI ROW, 1
-    CALL LCD_pos
-    CALL LCD_STR
-
-LOOP_MAIN:
-    RJMP LOOP_MAIN
-
-LCD_datas:
-    STS LCD_DATA, charData
-    _delay_us 50
-
-LCD_comm:
-    STS LCD_INST, charData
-    _delay_ms 5
-    RET
-
-LCD_CHAR:
-    CALL LCD_datas
-    RET
-LCD_STR:
-    LD charData, Z+
-    CPI charData, 0
-    BREQ LCD_STR_end
-    CALL LCD_CHAR
-    RJMP LCD_STR
-LCD_STR_end:
-    RET
-
-LCD_pos:
-    LDI charData, 0x80
-    ADD charData, COL
-    
-    LSL ROW
-    LSL ROW
-    LSL ROW
-    LSL ROW
-    LSL ROW
-    LSL ROW
-    
-    ADD charData, ROW
-    CALL LCD_comm
-    RET
-
-LCD_clear:
-    LDI charData, 1
-    CALL LCD_comm
-    RET
-
-LCD_init:
-    LDI charData, 0x38
-    CALL LCD_comm
-    LDI charData, 0x0C
-    CALL LCD_comm
-    LDI charData, 0x06
-
-    CALL LCD_comm
-    CALL LCD_clear
-    RET
-
-
-
-; ----------------------------------------.INCLUDE "m128def.inc"
+.LIST
 
 .DSEG
     .EQU F_CPU = 16000000
-    .EQU LCD_INST = 0x8000
-    .EQU LCD_DATA = 0x8002
+    .EQU LCD_INST_PTR = 0x8000
+    .EQU LCD_DATA_PTR = 0x8002
 
-    .DEF charData = R16
+    .DEF CHE = R16
     .DEF COL = R17
     .DEF ROW = R18
 
-    .DEF RegCnt = R23
-    .DEF xRegL = R24
-    .DEF xRegH = R25
-
-    .DEF strPtr = R26
+    .DEF str = R26
     .DEF strIndex = R27
 
-    .MACRO _delay ; 0~254
-        PUSH R23
-        PUSH R24
-        PUSH R25
-
-        LDI RegCnt, @0
-        CALL DELAY_S
-
-        POP R23
-        POP R24
-        POP R25
-    .ENDMACRO
-
-    .MACRO _delay_ms ; 0~254 ms
-        PUSH R23
-        PUSH R24
-        PUSH R25
-
-        LDI RegCnt, @0
-        CALL DELAY_MS
-
-        POP R23
-        POP R24
-        POP R25
-    .ENDMACRO
-
-    .MACRO _delay_us ; 0~254 us
-        PUSH R23
-        PUSH R24
-        PUSH R25
-
-        LDI RegCnt, @0
-        CALL DELAY_US
-
-        POP R23
-        POP R24
-        POP R25
+	.MACRO LCD_CHARS
+		LDI CHE, @0
+		CALL LCD_CHAR
 	.ENDMACRO
 
+	.MACRO LCD_POS
+		LDI COL, @0
+		LDI ROW, @1
+		CALL LCD_CURSOR
+	.ENDMACRO
+
+	.MACRO LCD_COMM
+        STS LCD_INST_PTR, @0
+        CALL D5MS
+	.ENDMACRO
+		
+
 .CSEG
-.ORG 0x0000
-    RJMP LOOP
+    .ORG 0x0000
+        RJMP LOOP
 
-.ORG 0x0046	
-	upperStr: .db "Hello", 0x00
-	lowerStr: .db "World", 0x00
-	
+    LOOP: 
+        LDI R16, LOW(RAMEND)
+        OUT SPL, R16
+        LDI R16, HIGH(RAMEND)
+        OUT SPH, R16
 
-LOOP:
-    LDI R16, LOW(RAMEND)
-    OUT SPL, R16
-    LDI R16, HIGH(RAMEND)
-    OUT SPH, R16
+        LDI R16, 0x80   
+        OUT MCUCR, R16 
 
-    LDI charData, 0x80
-    OUT MCUCR, charData
+        CALL LCD_INIT
 
-    CALL LCD_init
+        LCD_POS 0, 0
+        LCD_CHARS 'L'
 
-    LDI strPtr, LOW(upperStr)
-    LDI strIndex, HIGH(upperStr)
-    LDI COL, 0
-    LDI ROW, 0
-    CALL LCD_pos
-    CALL LCD_STR
+		LCD_POS 1, 0
+        LCD_CHARS 'O'
 
-    LDI strPtr, LOW(lowerStr)
-    LDI strIndex, HIGH(lowerStr)
-    LDI COL, 0
-    LDI ROW, 1
-    CALL LCD_pos
-    CALL LCD_STR
+		LCD_POS 0, 1
+        LCD_CHARS 'V'
 
-LOOP_MAIN:
-    RJMP LOOP_MAIN
+		LCD_POS 1, 1
+        LCD_CHARS 'E'
 
-LCD_datas:
-    STS LCD_DATA, charData
-    _delay_us 50
+    INFINITE:
+        RJMP INFINITE    
 
-LCD_comm:
-    STS LCD_INST, charData
-    _delay_ms 5
-    RET
+    LCD_INIT:
+		PUSH R16
+        LDI R16, 0x38
+        LCD_COMM R16   ; LCD_comm(0x38)
+        LDI R16, 0x0D
+        LCD_COMM R16   ; LCD_comm(0x0C)
+        LDI R16, 0x06
+        LCD_COMM R16   ; LCD_comm(0x06)        
+        LDI R16, 0x01
+        LCD_COMM R16   ; LCD_clear() : LCD_comm(1)
+		POP R16
+        RET
 
-LCD_CHAR:
-    CALL LCD_datas
-    RET
-LCD_STR:
-    LD charData, Z+
-    CPI charData, 0
-    BREQ LCD_STR_end
-    CALL LCD_CHAR
-    RJMP LCD_STR
-LCD_STR_end:
-    RET
+	LCD_DATAIN:
+        STS LCD_DATA_PTR, CHE
+        CALL D50US
+        RET
 
-LCD_pos:
-    LDI charData, 0x80
-    ADD charData, COL
+    LCD_CHAR:
+        STS LCD_DATA_PTR, CHE
+        CALL D50US
+        RET
     
-    LSL ROW
-    LSL ROW
-    LSL ROW
-    LSL ROW
-    LSL ROW
-    LSL ROW
-    
-    ADD charData, ROW
-    CALL LCD_comm
-    RET
+    LCD_CURSOR: 			
+        PUSH R16   
+        PUSH R17    
+        PUSH R18  
 
-LCD_clear:
-    LDI charData, 1
-    CALL LCD_comm
-    RET
+		MOV R17, COL ; move COL to R17
+		MOV R18, ROW ; move ROW to R18
 
-LCD_init:
-    LDI charData, 0x38
-    CALL LCD_comm
-    LDI charData, 0x0C
-    CALL LCD_comm
-    LDI charData, 0x06
+		LSL R18
+		LSL R18
+		LSL R18
+		LSL R18
+		LSL R18
+		LSL R18
 
-    CALL LCD_comm
-    CALL LCD_clear
-    RET
+        ADD R17, R18    ; R17 <- COL + ROW * 0x40
+        ORI R17, 0x80   ; R17 <- 0x80|(COL + ROW * 0x40)
+        LCD_COMM R17    ; 
+        
+        POP R18      
+        POP R17         
+        POP R16         
+
+        RET             ; return. 
 
 
 
-; ------------------------------------------;
+;------------------------------------------------
+;	Delay Subroutine
+;------------------------------------------------
+D500MS: RCALL	D100MS		; delay 500ms
+		RCALL	D200MS
+		RCALL	D200MS
+		RET
+
+D5MS:   LDI		R18,5
+        RJMP	BASE1MS
 
 
-DELAY_S:    
-    LDI xRegL, LOW(F_CPU/4)
-    LDI xRegH, HIGH(F_CPU/4)
 
-DELAY_S_LOOP:
-    SBIW xRegL, 1
-    BRNE DELAY_S_LOOP
-
-	DEC RegCnt
-	BRNE DELAY_S
-    RET
-
-DELAY_MS:    
-    LDI xRegL, LOW(F_CPU/4000)
-    LDI xRegH, HIGH(F_CPU/4000)
-
-DELAY_MS_LOOP:
-    SBIW xRegL, 1
-    BRNE DELAY_MS_LOOP
-
-	DEC RegCnt
-	BRNE DELAY_MS
-    RET
-
-DELAY_US:
-    LDI xRegL, LOW((F_CPU / 4000000))
-    LDI xRegH, HIGH((F_CPU / 4000000))
-
-DELAY_US_LOOP:
-    SBIW xRegL, 1  
-    BRNE DELAY_US_LOOP
-
-	DEC RegCnt
-	BRNE DELAY_US
-    RET
---;
+D100MS: LDI		R18,100
+		RJMP	BASE1MS
+D200MS: LDI		R18,200
+BASE1MS:RCALL	D200US		; 200 us
+		RCALL	D200US		; 200 us
+		RCALL	D200US		; 200 us
+		RCALL	D200US		; 200 us
+		RCALL	D200US		; 200 us
+		DEC		R18
+		BRNE	BASE1MS		; (total = 1 ms)
+		RET
 
 
-DELAY_S:    
-    LDI xRegL, LOW(F_CPU/4)
-    LDI xRegH, HIGH(F_CPU/4)
-
-DELAY_S_LOOP:
-    SBIW xRegL, 1
-    BRNE DELAY_S_LOOP
-
-	DEC RegCnt
-	BRNE DELAY_S
-    RET
-
-DELAY_MS:    
-    LDI xRegL, LOW(F_CPU/4000)
-    LDI xRegH, HIGH(F_CPU/4000)
-
-DELAY_MS_LOOP:
-    SBIW xRegL, 1
-    BRNE DELAY_MS_LOOP
-
-	DEC RegCnt
-	BRNE DELAY_MS
-    RET
-
-DELAY_US:
-    LDI xRegL, LOW((F_CPU / 4000000))
-    LDI xRegH, HIGH((F_CPU / 4000000))
-
-DELAY_US_LOOP:
-    SBIW xRegL, 1  
-    BRNE DELAY_US_LOOP
-
-	DEC RegCnt
-	BRNE DELAY_US
-    RET
+D50US:  LDI		R19, 50
+		RCALL	BASE1US
+		RET
+D200US: LDI		R19,200			; delay 200us
+BASE1US:NOP					; 1
+		PUSH	R19			; 2
+		POP		R19			; 2
+		PUSH	R19			; 2
+		POP		R19			; 2
+		PUSH	R19			; 2
+		POP		R19			; 2
+		DEC		R19			; 1
+		BRNE	BASE1US		; 2 (total 16 cycles = 1 us)
+		RET
