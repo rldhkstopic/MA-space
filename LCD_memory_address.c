@@ -30,13 +30,13 @@ void LCD_pos(char col, char row) // Start position
 }
 void LCD_clear(void)
 {
-	LCD_comm(1);
+	LCD_comm(0x01);
 }
 void LCD_init(void) 
 {
-	LCD_comm(0x38); // Function Set: Data line 8bit, 5X8 dot, 2 Line
-	LCD_comm(0x0C); // Display ON/OFF
-	LCD_comm(0x06); // Entry Mode Set: 
+	LCD_comm(0x38); // Function Set: Data line 8bit, 5X8 dot, 2 Line ; 0011 1000
+	LCD_comm(0x0D); // Display ON/OFF ; 0000 1101 d : 13 1101 -> CURSOR ON
+	LCD_comm(0x06); // Entry Mode Set:  ; 0000 0110
 	LCD_clear();
 }
 int main(void)
@@ -45,7 +45,6 @@ int main(void)
 	MCUCR = 0x80; // Address and data bus
 	LCD_init(); 
 	LCD_pos(0,0);
-	sprintf(str,"Hello");
 	LCD_STR(str);
 	LCD_pos(0,1);
 	sprintf(str,"World");
