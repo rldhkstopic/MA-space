@@ -7,6 +7,9 @@
     .EQU LCD_INST_PTR = 0x8000
     .EQU LCD_DATA_PTR = 0x8002
 
+    .EQU RS = 0x01
+    .EQU EN = 0x00
+
     .DEF CHE = R16
     .DEF COL = R17
     .DEF ROW = R18
@@ -45,6 +48,12 @@
         OUT MCUCR, R16 
 
         CALL LCD_INIT
+        
+        LDI R16, 0xF0
+        OUT DDRA, R16
+        
+
+        
 
         LCD_POS 0, 0
         LCD_CHARS 'L'
@@ -116,7 +125,8 @@
 
         RET             ; return. 
 
-
+    FLIP_BITS:
+        
 
 ;------------------------------------------------
 ;	Delay Subroutine
