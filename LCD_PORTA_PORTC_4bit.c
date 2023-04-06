@@ -10,7 +10,7 @@
 #define RS 0x01
 #define EN 0x00 
 void delay_us(unsigned char time_us)
-{
+{ 
 	register unsigned char i;
 	for(i=0;i<time_us;i++) //4 cycle
 	{
@@ -97,7 +97,7 @@ void LCD_init(void) // LCD 초기화
 {
 	LCD_comm(0x20); //4bit 초기화
 	delay_ms(5);
-	LCD_comm(0x28); //데이터 4비트 사용, 5X7도트 , LCD2열로 사용(6)
+	LCD_comm(0x28); //데이터 4비트 사용, 5X7도트 , LCD2열로 사용(6) 0010 1000
 	delay_ms(5);
 	LCD_comm(0x0C); //Display ON/OFF
 	delay_ms(5);

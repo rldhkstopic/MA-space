@@ -4,33 +4,21 @@
 
 .DSEG
     .EQU F_CPU = 16000000
-    .EQU LCD_INST_PTR = 0x8000
-    .EQU LCD_DATA_PTR = 0x8002
 
-    .EQU RS = 0x01
-    .EQU EN = 0x00
-
-    .DEF CHE = R16
+	.DEF CH = R16
     .DEF COL = R17
     .DEF ROW = R18
 
-    .DEF str = R26
-    .DEF strIndex = R27
-
-	.MACRO LCD_CHARS
-		LDI CHE, @0
-		CALL LCD_CHAR
+	.MACRO LCD_CHAR
+		CALL BASE1MS
+		LDI CH, @0
+		CALL LCD_DATA
 	.ENDMACRO
 
 	.MACRO LCD_POS
 		LDI COL, @0
 		LDI ROW, @1
 		CALL LCD_CURSOR
-	.ENDMACRO
-
-	.MACRO LCD_COMM
-        STS LCD_INST_PTR, @0
-        CALL D5MS
 	.ENDMACRO
 		
 
@@ -43,65 +31,119 @@
         OUT SPL, R16
         LDI R16, HIGH(RAMEND)
         OUT SPH, R16
-
-        LDI R16, 0x80   
-        OUT MCUCR, R16 
-
+        
+		LDI R16, 0xF0
+		OUT DDRA, R16
+				
+		LDI R16, 0x03
+		OUT DDRC, R16
+		
         CALL LCD_INIT
-        
-        LDI R16, 0xF0
-        OUT DDRA, R16
-        
 
-        
+		LCD_POS 1,1
+		LCD_CHAR 0X32
 
-        LCD_POS 0, 0
-        LCD_CHARS 'L'
+    INFINITE:	  		
+		JMP INFINITE
 
-		LCD_POS 1, 0
-        LCD_CHARS 'O'
-
-		LCD_POS 0, 1
-        LCD_CHARS 'V'
-
-		LCD_POS 1, 1
-        LCD_CHARS 'E'
-
-    INFINITE:
-        RJMP INFINITE    
 
     LCD_INIT:
-		PUSH R16
-        LDI R16, 0x20
-        LCD_COMM R16   ; LCD_comm(0x20)
-        CALL D5MS
-        LDI R16, 0x28
-        LCD_COMM R16   ; LCD_comm(0x28)
-        CALL D5MS
-        LDI R16, 0x0C
-        LCD_COMM R16   ; LCD_comm(0x0C)    
-        CALL D5MS    
-        LDI R16, 0x06
-        LCD_COMM R16   ; LCD_comm(0x06)   
-        CALL D5MS   
-        LDI R16, 0x01
-        LCD_COMM R16   ; LCD_clear() : LCD_comm(1)
-        CALL D5MS
-		POP R16
+        LDI CH, 0x20
+        CALL LCD_COMM   ; LCD_comm(0x20)
+		CALL D5MS
+        LDI CH, 0x28
+        CALL LCD_COMM   ; LCD_comm(0X28)
+		CALL D5MS
+        LDI CH, 0x0C
+        CALL LCD_COMM   ; LCD_comm(0x0C)  
+		CALL D5MS    
+		LDI CH, 0x06
+        CALL LCD_COMM   ; LCD_comm(0x06) 
+		CALL D5MS    
+        LDI CH, 0x01
+        CALL LCD_COMM   ; LCD_clear() : LCD_comm(1)
         RET
 
-	LCD_DATAIN:
-        STS LCD_DATA_PTR, CHE
-        CALL D50US
-        RET
+	LCD_COMM:
+		PUSH R17
+		LDI R17, PORTC
 
-    LCD_CHAR:
-        STS LCD_DATA_PTR, CHE
-        CALL D50US
-        RET
-    
-    LCD_CURSOR: 			
-        PUSH R16   
+		RCALL FLIP_BITS
+
+		OUT PORTA, R20	; flip_bits(ch)
+
+		ANDI R17, 0xFD	;
+		OUT PORTC, R17	; PORTC &= ~(0x02)
+		ORI R17, 0x01	
+		OUT PORTC, R17	; PORTC |= 0x01
+		CALL D1US
+		ANDI R17, 0xFE
+		OUT PORTC, R17	; PORTC &= ~(0x01)
+		CALL D20US
+
+		LSL CH
+		LSL CH
+		LSL CH
+		LSL CH
+		RCALL FLIP_BITS
+
+		OUT PORTA, R20	; flip_bits(ch<<4)
+		
+		ANDI R17, 0xFD	;
+		OUT PORTC, R17	; PORTC &= ~(0x02)
+		ORI R17, 0x01	
+		OUT PORTC, R17	; PORTC |= 0x01
+		CALL D1US
+		ANDI R17, 0xFE
+		OUT PORTC, R17	; PORTC &= ~(0x01)
+		CALL D5MS
+		
+		POP R17
+
+		RET
+	    
+	LCD_DATA:
+		PUSH R17
+		PUSH R18
+
+		LDI R17, PORTC
+
+		RCALL FLIP_BITS 
+
+		OUT PORTA, R20	; flip_bits(ch)
+
+		ORI R17, 0x02	
+		OUT PORTC, R17	; PORTC |= 0x02
+		ORI R17, 0x01	
+		OUT PORTC, R17	; PORTC |= 0x01
+		CALL D1US
+		ANDI R17, 0xFE
+		OUT PORTC, R17	; PORTC &= ~(0x01)
+		CALL D20US
+
+		LSL CH
+		LSL CH
+		LSL CH
+		LSL CH
+		RCALL FLIP_BITS 
+		
+		OUT PORTA, R20	; flip_bits(ch<<4)
+
+		ORI R17, 0x02	
+		OUT PORTC, R17	; PORTC |= 0x02		
+		ORI R17, 0x01	
+		OUT PORTC, R17	; PORTC |= 0x01
+		CALL D1US
+		ANDI R17, 0xFE
+		OUT PORTC, R17	; PORTC &= ~(0x01)
+		CALL D50US
+		
+		POP R18
+		POP R17
+
+		RET
+
+    LCD_CURSOR: 	
         PUSH R17    
         PUSH R18  
 
@@ -117,16 +159,55 @@
 
         ADD R17, R18    ; R17 <- COL + ROW * 0x40
         ORI R17, 0x80   ; R17 <- 0x80|(COL + ROW * 0x40)
-        LCD_COMM R17    ; 
+		MOV CH, R17
+        RCALL LCD_COMM	; 
         
         POP R18      
-        POP R17         
-        POP R16         
+        POP R17           
 
         RET             ; return. 
 
-    FLIP_BITS:
-        
+	FLIP_BITS: ; char flip_bits(char ch) Input: R16 (ch) CH 저장하기
+		PUSH R17 ; Save R17 on the stack
+		PUSH R18
+		PUSH R19
+
+		LDI R19, 0x00 ; char return_ch = 0;
+
+		LDI R17, 0x10 ; Load 0x10 into R17
+		MOV R18, CH   ; Copy R16 (ch) into R16
+		LSR R18		  ; Shift right by 3
+		LSR R18
+		LSR R18
+		AND R18, R17   
+		MOV R19, R18  ; return_ch = (ch >> 3) & 0x10
+
+		LDI R17, 0x20 ; Load 0x20 into R17
+		MOV R18, CH   ; Copy R16 (ch) into R18
+		LSR R18		  ; Shift right by 1
+		AND R18, R17   
+		OR R19, R18   ; return_ch = return_ch | (ch >> 1) & 0x20
+
+		LDI R17, 0x40 ; Load 0x40 into R17
+		MOV R18, CH   ; Copy R16 (ch) into R18
+		LSL R18		  ; Shift left by 1
+		AND R18, R17 
+		OR R19, R18   ; return_ch = return_ch | (ch << 1) & 0x40
+
+		LDI R17, 0x80 ; Load 0x80 into R17
+		MOV R18, CH   ; Copy R16 (ch) into R18
+		LSL R18		  ; Shift left by 3
+		LSL R18
+		LSL R18
+		AND R18, R17    
+		OR R19, R18    ; return_ch = return_ch | (ch << 3) & 0x80
+
+		MOV R20, R19	  ; return return_ch
+
+		POP R19
+		POP R18
+		POP R17		 
+		RET			
 
 ;------------------------------------------------
 ;	Delay Subroutine
@@ -153,7 +234,12 @@ BASE1MS:RCALL	D200US		; 200 us
 		BRNE	BASE1MS		; (total = 1 ms)
 		RET
 
-
+D1US:	LDI		R19, 1
+		RCALL	BASE1US
+		RET
+D20US:	LDI		R19, 20
+		RCALL	BASE1US
+		RET
 D50US:  LDI		R19, 50
 		RCALL	BASE1US
 		RET
