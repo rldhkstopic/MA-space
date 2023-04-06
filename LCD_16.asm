@@ -4,13 +4,15 @@
 
 .DSEG
     .EQU F_CPU = 16000000
+		
+
 
 	.DEF CH = R16
     .DEF COL = R17
     .DEF ROW = R18	
 
 	.MACRO LCD_CHAR
-		CALL BASE1MS
+		CALL D200US
 		MOV CH, @0
 		CALL LCD_DATA
 	.ENDMACRO
@@ -20,21 +22,36 @@
 		LDI ROW, @1
 		CALL LCD_CURSOR
 	.ENDMACRO
-		
+	
+	.MACRO LCD_DISPLAY
+		PUSH R16
+		.SET INIT_COL = @1
+		.SET INIT_ROW = @2	; 0~1 사이
+		.SET OFFSET = @3
+	
+		LDI ZL, LOW(@0)
+		LDI ZH, HIGH(@0)
+
+		LDI R16, OFFSET
+		ADD ZL, R16
+		POP R16
+
+		CALL LCD_STR 
+	.ENDMACRO
 
 .CSEG
     .ORG 0x0000
-        RJMP LOOP
-
-	mySTR: .DB "HELLO", 0x00
+        RJMP LOOP	
+	
+	uSTR: .DB "HELLO ", "WORLD", 0x00
 
 
     LOOP: 
         LDI R16, LOW(RAMEND)
         OUT SPL, R16
-        LDI R16, HIGH(RAMEND)
+		LDI R16, HIGH(RAMEND)
         OUT SPH, R16
-        
+
 		LDI R16, 0xF0
 		OUT DDRA, R16
 				
@@ -43,11 +60,10 @@
 		
         CALL LCD_INIT
 
-		LDI R30, LOW(mySTR)
-		LDI R31, HIGH(mySTR)
-		CALL LCD_STR 
+		
+		LCD_DISPLAY uSTR, 5, 0, 0
 
-    INFINITE:	  		
+    INFINITE:	
 		JMP INFINITE
 
 
@@ -174,26 +190,27 @@
 ;------------------------------------------------
 ;	String Subroutine
 ;------------------------------------------------
-	
+
+
 	LCD_STR:
 		PUSH R22 
 		PUSH R21	
 		LDI R22, 0
-		LDI R21, 5
-		
+		LDI R21, INIT_COL
+
 	STR_LOOP:
 		LPM R22, Z+		 ; Load the character pointed by Z (strPtr)
 		TST R22			 ; Compare R20 with 0 (end of string)
 		BREQ STR_END	 ; If R22 == 0, branch to STR_END				
 
 		INC R21
-		CPI R21, 6
+		CPI R21, INIT_COL+1
 		BREQ STR_LOOP
 
 		MOV R1, R21
 		DEC R1
 		DEC R1
-		LCD_POS R1, 0
+		LCD_POS R1, INIT_ROW
 		LCD_CHAR R22	
 
 		RJMP STR_LOOP	
