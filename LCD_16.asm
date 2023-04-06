@@ -1,4 +1,4 @@
-.nolist
+.NOLIST
 .INCLUDE "m128def.inc"
 .LIST
 
@@ -7,16 +7,16 @@
 
 	.DEF CH = R16
     .DEF COL = R17
-    .DEF ROW = R18
+    .DEF ROW = R18	
 
 	.MACRO LCD_CHAR
 		CALL BASE1MS
-		LDI CH, @0
+		MOV CH, @0
 		CALL LCD_DATA
 	.ENDMACRO
 
 	.MACRO LCD_POS
-		LDI COL, @0
+		MOV COL, @0
 		LDI ROW, @1
 		CALL LCD_CURSOR
 	.ENDMACRO
@@ -25,6 +25,9 @@
 .CSEG
     .ORG 0x0000
         RJMP LOOP
+
+	mySTR: .DB "HELLO", 0x00
+
 
     LOOP: 
         LDI R16, LOW(RAMEND)
@@ -40,8 +43,9 @@
 		
         CALL LCD_INIT
 
-		LCD_POS 1,1
-		LCD_CHAR 0X32
+		LDI R30, LOW(mySTR)
+		LDI R31, HIGH(mySTR)
+		CALL LCD_STR 
 
     INFINITE:	  		
 		JMP INFINITE
@@ -165,44 +169,81 @@
         POP R18      
         POP R17           
 
-        RET             ; return. 
+        RET  
 
-	FLIP_BITS: ; char flip_bits(char ch) Input: R16 (ch) CH 저장하기
-		PUSH R17 ; Save R17 on the stack
+;------------------------------------------------
+;	String Subroutine
+;------------------------------------------------
+	
+	LCD_STR:
+		PUSH R22 
+		PUSH R21	
+		LDI R22, 0
+		LDI R21, 5
+		
+	STR_LOOP:
+		LPM R22, Z+		 ; Load the character pointed by Z (strPtr)
+		TST R22			 ; Compare R20 with 0 (end of string)
+		BREQ STR_END	 ; If R22 == 0, branch to STR_END				
+
+		INC R21
+		CPI R21, 6
+		BREQ STR_LOOP
+
+		MOV R1, R21
+		DEC R1
+		DEC R1
+		LCD_POS R1, 0
+		LCD_CHAR R22	
+
+		RJMP STR_LOOP	
+	
+
+	STR_END:
+		POP R21 
+		POP R22 
+		RET 
+     
+
+;------------------------------------------------
+;	flip_bits Subroutine
+;------------------------------------------------
+	FLIP_BITS:				; char flip_bits(char ch)
+		PUSH R17 
 		PUSH R18
 		PUSH R19
 
-		LDI R19, 0x00 ; char return_ch = 0;
+		LDI R19, 0x00		; char return_ch = 0;
 
-		LDI R17, 0x10 ; Load 0x10 into R17
-		MOV R18, CH   ; Copy R16 (ch) into R16
-		LSR R18		  ; Shift right by 3
+		LDI R17, 0x10		; Load 0x10 into R17
+		MOV R18, CH			; Copy R16 (ch) into R16
+		LSR R18				; Shift right by 3
 		LSR R18
 		LSR R18
 		AND R18, R17   
-		MOV R19, R18  ; return_ch = (ch >> 3) & 0x10
+		MOV R19, R18		; return_ch = (ch >> 3) & 0x10
 
-		LDI R17, 0x20 ; Load 0x20 into R17
-		MOV R18, CH   ; Copy R16 (ch) into R18
-		LSR R18		  ; Shift right by 1
+		LDI R17, 0x20		; Load 0x20 into R17
+		MOV R18, CH			; Copy R16 (ch) into R18
+		LSR R18				; Shift right by 1
 		AND R18, R17   
-		OR R19, R18   ; return_ch = return_ch | (ch >> 1) & 0x20
+		OR R19, R18			; return_ch = return_ch | (ch >> 1) & 0x20
 
-		LDI R17, 0x40 ; Load 0x40 into R17
-		MOV R18, CH   ; Copy R16 (ch) into R18
-		LSL R18		  ; Shift left by 1
+		LDI R17, 0x40		; Load 0x40 into R17
+		MOV R18, CH			; Copy R16 (ch) into R18
+		LSL R18				; Shift left by 1
 		AND R18, R17 
-		OR R19, R18   ; return_ch = return_ch | (ch << 1) & 0x40
+		OR R19, R18			; return_ch = return_ch | (ch << 1) & 0x40
 
-		LDI R17, 0x80 ; Load 0x80 into R17
-		MOV R18, CH   ; Copy R16 (ch) into R18
-		LSL R18		  ; Shift left by 3
+		LDI R17, 0x80		; Load 0x80 into R17
+		MOV R18, CH			; Copy R16 (ch) into R18
+		LSL R18				; Shift left by 3
 		LSL R18
 		LSL R18
 		AND R18, R17    
-		OR R19, R18    ; return_ch = return_ch | (ch << 3) & 0x80
+		OR R19, R18			; return_ch = return_ch | (ch << 3) & 0x80
 
-		MOV R20, R19	  ; return return_ch
+		MOV R20, R19		; return return_ch
 
 		POP R19
 		POP R18
