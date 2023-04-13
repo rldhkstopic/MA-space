@@ -1,0 +1,136 @@
+.INCLUDE "m128def.inc"
+
+.DEF    ONES_DIGIT = R20
+.DEF    TENS_DIGIT = R21
+.DEF    TEMP = R22
+.DEF    COUNT = R23
+
+.CSEG
+    .ORG    0x0000
+        LDI		R16, LOW(RAMEND)
+        OUT		SPL, R16
+        LDI		R16, HIGH(RAMEND)
+        OUT		SPH, R16
+
+        LDI		R16, 0x0F
+        STS		DDRF, R16
+
+        LDI		R16, 0xFF
+        OUT		DDRE, R16
+
+        LDI		COUNT, 0
+
+    LOOP:
+        MOV		ONES_DIGIT, COUNT
+        CALL	DIGITS_TWO
+
+        INC		COUNT
+        CPI		COUNT, 60
+        BRNE	SKIP
+
+        LDI		COUNT, 0
+    SKIP:
+        CALL	D100MS
+        JMP		LOOP
+
+
+
+    DIGITS:
+        PUSH	TEMP
+        LDI		TENS_DIGIT, 0
+        LDI		TEMP, 10
+		
+	REPEAT:
+		SUB		ONES_DIGIT, TEMP
+		BRMI	MINUS
+		INC		TENS_DIGIT
+		RJMP	REPEAT
+
+	MINUS:
+		ADD		ONES_DIGIT, TEMP
+		POP		TEMP
+		RET
+
+	DIGITS_TWO:
+		CALL	DIGITS
+
+		LDI		R17, 0xEF
+		OUT		PORTE, R17
+		STS		PORTF, TENS_DIGIT
+
+		LDI		R17, 0xDF
+		OUT		PORTE, R17
+		STS		PORTF, ONES_DIGIT
+
+		RET
+
+
+;------------------------------------------------
+;	Delay Subroutine
+;------------------------------------------------
+D500MS: RCALL	D100MS		; delay 500ms
+		RCALL	D200MS
+		RCALL	D200MS
+		RET
+D300MS:	RCALL	D100MS
+		RCALL	D200MS
+		RET
+
+D5MS:   PUSH	R18
+		LDI		R18,5
+        RJMP	BASE1MS
+
+D100MS: PUSH	R18
+		LDI		R18,100
+		RJMP	BASE1MS
+
+D200MS: PUSH	R18
+		LDI		R18,200
+		RJMP	BASE1MS
+
+BASE1MS:RCALL	D200US		; 200 us
+		RCALL	D200US		; 200 us
+		RCALL	D200US		; 200 us
+		RCALL	D200US		; 200 us
+		RCALL	D200US		; 200 us
+		DEC		R18
+		BRNE	BASE1MS		; (total = 1 ms)
+		POP		R18
+		RET
+
+D1US:	PUSH	R19
+		LDI		R19, 1
+		RJMP	BASE1US
+
+D20US:	PUSH	R19
+		LDI		R19, 20
+		RJMP	BASE1US
+
+D50US:  PUSH	R19
+		LDI		R19, 50
+		RJMP	BASE1US
+
+D200US: PUSH	R19
+		LDI		R19,200			; delay 200us
+		RJMP	BASE1US
+
+BASE1US:NOP					; 1
+		PUSH	R19			; 2
+		POP		R19			; 2
+		PUSH	R19			; 2
+		POP		R19			; 2
+		PUSH	R19			; 2
+		POP		R19			; 2
+		DEC		R19			; 1
+		BRNE	BASE1US		; 2 (total 16 cycles = 1 us)
+		POP		R19
+		RET
+
+
+
+
+
+
+
+
+

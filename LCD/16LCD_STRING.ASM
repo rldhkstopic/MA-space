@@ -1,35 +1,18 @@
-.NOLIST
 .INCLUDE "m128def.inc"
-.LIST
+
+; 000 TIMER 
 
 .DSEG
     .EQU F_CPU = 16000000
-
-	.DEF CH = R16
-    .DEF COL = R17
-    .DEF ROW = R18
-	.DEF CNT = R19
-
-	.MACRO _delay_ms		
-		PUSH	R18
-		LDI		R18, @0
-		CALL	BASE1MS
-	.ENDMACRO
-
-	.MACRO _delay_us		
-		PUSH	R19
-		LDI		R19, @0
-		CALL	BASE1US
-	.ENDMACRO
 	
 	.MACRO LCD_CHAR
-		_delay_us(200)
+		CALL D200US
 		MOV CH, @0
 		CALL LCD_DATA
 	.ENDMACRO
 
 	.MACRO LCD_POS
-		MOV COL, @0
+		LDI COL, @0
 		LDI ROW, @1
 		CALL LCD_CURSOR
 	.ENDMACRO
@@ -44,15 +27,25 @@
 
 		CALL LCD_STR 
 	.ENDMACRO
+	
+	.SET COLEND = 16
+
+	.DEF CH = R16
+	.DEF COL = R17
+	.DEF ROW = R18
+	.DEF CNT = R19
+	.DEF DCNT = R22
+	.DEF HCNT = R21
+	.DEF TCNT = R23
 
 .CSEG
     .ORG 0x0000
-        RJMP LOOP	
+        RJMP INIT	
 	
-	uSTR: .DB "asLLO ", "WORLD", 0x00
+	uSTR: .DB "HELLO ", "WORLD", 0x00
 
 
-    LOOP: 
+    INIT: 
         LDI R16, LOW(RAMEND)
         OUT SPL, R16
 		LDI R16, HIGH(RAMEND)
@@ -65,25 +58,84 @@
 		OUT DDRC, R16
 		
         CALL LCD_INIT
-		
-		LCD_DISPLAY uSTR, 5, 0, 0
+				
+		LDI CNT, 0x30		
+		LDI DCNT, 0x30
+		LDI HCNT, 0x30
+		LDI TCNT, 0x30
 
-    INFINITE:	
-		JMP INFINITE
+	TIMER_INIT:
+		LCD_POS COLEND-1,0
+		LCD_CHAR CNT
+		LCD_POS COLEND-2,0
+		LCD_CHAR DCNT
+		LCD_POS COLEND-3,0
+		LCD_CHAR HCNT
 	
+	TIMER1:	INC CNT	
+		CALL D5MS
+		;CALL D5MS
+		;CALL D5MS
+		;CALL D5MS
+		;CALL D5MS
+		;CALL D5MS
+		;CALL D5MS
+		;CALL D5MS
+		;CALL D5MS
+		;CALL D5MS
+
+		CPI CNT, 0x3A	; 9일때
+		BRNE TIMER_INIT
+
+		LDI CNT, 0x30
+
+	TIMER2: INC DCNT	
+
+		CPI DCNT, 0x3A	; 9일때 DCNT : 0x3A인 상태로 TIMER로 분기함
+		BRNE TIMER_INIT
+			 	
+		LDI DCNT, 0x30
+
+	TIMER3:	INC HCNT					
+		
+		CPI HCNT, 0x3A	; 9일때
+		BRNE TIMER_INIT
+		
+		LDI HCNT, 0x30
+
+	TIMER4:	INC TCNT					
+		
+		CPI TCNT, 0x31	; 9일때
+		BREQ STOP
+
+		RET
+
+	STOP:
+		LCD_POS COLEND-1,0
+		LCD_CHAR CNT
+		LCD_POS COLEND-2,0
+		LCD_CHAR DCNT
+		LCD_POS COLEND-3,0
+		LCD_CHAR HCNT
+		LCD_POS COLEND-4,0
+		LCD_CHAR TCNT
+
+	INFINITE:
+		JMP INFINITE
+		 
     LCD_INIT:
         LDI CH, 0x20
         CALL LCD_COMM   ; LCD_comm(0x20)
-		_delay_ms(5)
+		CALL D5MS
         LDI CH, 0x28
         CALL LCD_COMM   ; LCD_comm(0X28)
-		_delay_ms(5)
+		CALL D5MS
         LDI CH, 0x0C
         CALL LCD_COMM   ; LCD_comm(0x0C)  
-		_delay_ms(5)  
+		CALL D5MS    
 		LDI CH, 0x06
         CALL LCD_COMM   ; LCD_comm(0x06) 
-		_delay_ms(5)   
+		CALL D5MS   
         LDI CH, 0x01
         CALL LCD_COMM   ; LCD_clear() : LCD_comm(1)
         RET
@@ -100,10 +152,10 @@
 		OUT PORTC, R17	; PORTC &= ~(0x02)
 		ORI R17, 0x01	
 		OUT PORTC, R17	; PORTC |= 0x01
-		_delay_us(1)
+		CALL D1US
 		ANDI R17, 0xFE
 		OUT PORTC, R17	; PORTC &= ~(0x01)
-		_delay_us(20)
+		CALL D20US
 
 		LSL CH
 		LSL CH
@@ -117,10 +169,10 @@
 		OUT PORTC, R17	; PORTC &= ~(0x02)
 		ORI R17, 0x01	
 		OUT PORTC, R17	; PORTC |= 0x01
-		_delay_us(1)
+		CALL D1US
 		ANDI R17, 0xFE
 		OUT PORTC, R17	; PORTC &= ~(0x01)
-		_delay_us(20)
+		CALL D5MS
 		
 		POP R17
 
@@ -140,10 +192,10 @@
 		OUT PORTC, R17	; PORTC |= 0x02
 		ORI R17, 0x01	
 		OUT PORTC, R17	; PORTC |= 0x01
-		_delay_us(1)
+		CALL D1US
 		ANDI R17, 0xFE
 		OUT PORTC, R17	; PORTC &= ~(0x01)
-		_delay_us(20)
+		CALL D20US
 
 		LSL CH
 		LSL CH
@@ -157,10 +209,10 @@
 		OUT PORTC, R17	; PORTC |= 0x02		
 		ORI R17, 0x01	
 		OUT PORTC, R17	; PORTC |= 0x01
-		_delay_us(1)
+		CALL D1US
 		ANDI R17, 0xFE
 		OUT PORTC, R17	; PORTC &= ~(0x01)
-		_delay_us(50)
+		CALL D50US
 		
 		POP R18
 		POP R17
@@ -191,42 +243,6 @@
 
         RET  
 
-;------------------------------------------------
-;	String Subroutine
-;------------------------------------------------
-
-
-	LCD_STR:
-		PUSH R22 
-		PUSH R21	
-		LDI R22, 0
-		LDI R21, INIT_COL
-
-	STR_LOOP:
-		LPM R22, Z+		 ; Load the character pointed by Z (strPtr)
-		TST R22			 ; Compare R20 with 0 (end of string)
-		BREQ STR_END	 ; If R22 == 0, branch to STR_END				
-
-		INC R21
-		CPI R21, INIT_COL+1
-		BREQ STR_LOOP
-
-		MOV R1, R21
-		DEC R1
-		DEC R1
-
-		LCD_POS R1, 0
-		LCD_CHAR R22	
-		LCD_POS R1, 1
-		LCD_CHAR R22
-
-		RJMP STR_LOOP
-
-	STR_END:
-		POP R21 
-		POP R22 
-		RET 
-     
 
 ;------------------------------------------------
 ;	flip_bits Subroutine
@@ -276,22 +292,51 @@
 ;------------------------------------------------
 ;	Delay Subroutine
 ;------------------------------------------------
-D500MS: 
-		_delay_ms(100)
-		_delay_ms(200)
-		_delay_ms(200)
+D500MS: RCALL	D100MS		; delay 500ms
+		RCALL	D200MS
+		RCALL	D200MS
+		RET
+D300MS:	RCALL	D100MS
+		RCALL	D200MS
 		RET
 
-BASE1MS:
-		_delay_us(200)		; 200 us
-		_delay_us(200)		; 200 us
-		_delay_us(200)		; 200 us
-		_delay_us(200)		; 200 us
-		_delay_us(200)		; 200 us
+D5MS:   PUSH	R18
+		LDI		R18,5
+        RJMP	BASE1MS
+
+D100MS: PUSH	R18
+		LDI		R18,100
+		RJMP	BASE1MS
+
+D200MS: PUSH	R18
+		LDI		R18,200
+		RJMP	BASE1MS
+
+BASE1MS:RCALL	D200US		; 200 us
+		RCALL	D200US		; 200 us
+		RCALL	D200US		; 200 us
+		RCALL	D200US		; 200 us
+		RCALL	D200US		; 200 us
 		DEC		R18
 		BRNE	BASE1MS		; (total = 1 ms)
 		POP		R18
 		RET
+
+D1US:	PUSH	R19
+		LDI		R19, 1
+		RJMP	BASE1US
+
+D20US:	PUSH	R19
+		LDI		R19, 20
+		RJMP	BASE1US
+
+D50US:  PUSH	R19
+		LDI		R19, 50
+		RJMP	BASE1US
+
+D200US: PUSH	R19
+		LDI		R19,200			; delay 200us
+		RJMP	BASE1US
 
 BASE1US:NOP					; 1
 		PUSH	R19			; 2
@@ -302,5 +347,5 @@ BASE1US:NOP					; 1
 		POP		R19			; 2
 		DEC		R19			; 1
 		BRNE	BASE1US		; 2 (total 16 cycles = 1 us)
-		POP R19
+		POP		R19
 		RET
