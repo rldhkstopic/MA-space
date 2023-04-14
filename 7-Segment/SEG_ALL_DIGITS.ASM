@@ -1,0 +1,45 @@
+.INCLUDE "m128def.inc"
+
+
+.CSEG
+    .ORG    0x0000
+        LDI		R16, LOW(RAMEND)
+        OUT		SPL, R16
+        LDI		R16, HIGH(RAMEND)
+        OUT		SPH, R16
+
+        LDI		R16, 0x0F
+        STS		DDRF, R16
+        LDI		R16, 0xFF
+        OUT		DDRE, R16
+
+    LOOP:
+        LDI	R16, 0xFE
+		OUT	PORTE, R16
+		LDI	R16, 1
+		STS	PORTF, R16
+
+		LDI	R16, 0xFD
+		OUT	PORTE, R16
+		LDI	R16, 2
+		STS	PORTF, R16
+
+		LDI	R16, 0xFB
+		OUT	PORTE, R16
+		LDI	R16, 3
+		STS	PORTF, R16
+
+		LDI	R16, 0xF7
+		OUT	PORTE, R16
+		LDI	R16, 4
+		STS	PORTF, R16
+
+		LDI	R16, 0xEF
+		OUT	PORTE, R16
+		LDI	R16, 5
+		STS	PORTF, R16
+
+		LDI	R16, 0xDF
+		OUT	PORTE, R16
+		LDI	R16, 6
+		STS	PORTF, R16

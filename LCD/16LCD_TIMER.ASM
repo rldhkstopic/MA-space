@@ -1,8 +1,7 @@
-.NOLIST
 .INCLUDE "m128def.inc"
-.LIST
 
-; 000 TIMER 
+; 000 TIMER
+; kiwan park 
 
 .DSEG
     .EQU F_CPU = 16000000
@@ -38,6 +37,11 @@
 	.DEF CNT = R19
 	.DEF DCNT = R22
 	.DEF HCNT = R21
+
+
+
+
+
 
 .CSEG
     .ORG 0x0000

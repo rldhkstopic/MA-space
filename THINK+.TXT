@@ -1,0 +1,18 @@
+
+
+while :
+    cnt++;
+    if cnt is 60:
+        cnt = 0
+        R21++
+
+
+    if R21 is 60:
+        R21 = 0
+        R22++
+
+    if R22 is 60:
+        R22 = 0
+
+
+    
