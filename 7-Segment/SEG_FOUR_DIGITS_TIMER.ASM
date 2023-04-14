@@ -2,12 +2,13 @@
 
 .DSEG
 
-	.DEF POS = R22
-	.DEF CNT = R23
+	.DEF POS = R26
+	.DEF CNT = R25
 
 	.MACRO BITS		
-		ROR @0
+		ROR		@0
 	.ENDMACRO
+
 
 	.MACRO DISPLAY
 		PUSH R16
@@ -16,6 +17,11 @@
 		MOV	R16, @1
 		STS	PORTF, R16
 		POP R16
+	.ENDMACRO
+
+	.MACRO DISPLAY_SHIFT
+			BITS	@0
+			DISPLAY @0, @1
 	.ENDMACRO
 
 .CSEG
@@ -30,19 +36,39 @@
         LDI		R16, 0xFF
         OUT		DDRE, R16
 
-		LDI		CNT, 0			
+		LDI		CNT, 0
+		LDI		R21, 0		
+		LDI		R22, 0	
 
     LOOP:		
 		CALL	DIGITS_TWO
 
 		INC		CNT
-		CPI		CNT, 60
+		CPI		CNT, 60			; IF. CNT is 60
 		BRNE	SKIP
 
-		LDI		CNT, 0
+		LDI		CNT, 0			; CNT = 0
+		INC		R21				; R21 + 1
+
+		CPI		R21, 10
+		BREQ	MIDONES_DIGIT	; R21 is 10
+
+		CPI		R22, 6
+		BREQ	MIDTENS_DIGIT
+		
+		CALL	SKIP
+
+
+		MIDONES_DIGIT:
+			LDI		R21, 0
+			INC		R22
+			JMP		SKIP
+		MIDTENS_DIGIT:
+			LDI		R22, 0
+			JMP		SKIP
 
 		SKIP:
-			CALL	D100MS
+			CALL	D50MS
 			JMP		LOOP		
 
 		DIGITS_TWO:
@@ -53,11 +79,13 @@
 			MOV		R17, CNT
 			LDI		R20, 0
 			LDI		R16, 10
+
 		REPEAT:
-			SUB		R17, R16	
-			BRMI	MINUS
-			INC		R20
-			RJMP	REPEAT
+			SUB		R17, R16
+			BRMI	MINUS		
+			INC		R20			
+
+			JMP		REPEAT
 
 		MINUS:
 			ADD		R17, R16
@@ -69,14 +97,15 @@
 			DISPLAY POS, R20
 
 			BITS	POS 
-			DISPLAY POS, R17
+			DISPLAY POS, R21
 
 			BITS	POS 
-			DISPLAY POS, R20
-			
+			DISPLAY POS, R22
+
 			POP		R20
 			POP		R17			
 			POP		R16
+
 			RET
 
 		
@@ -91,7 +120,8 @@
 			RCALL	D200MS
 			RET
 
-	D5MS:   LDI		R18,5
+
+	D50MS:  LDI	R18,20
 			RJMP	BASE1MS
 
 	D100MS: LDI		R18,100

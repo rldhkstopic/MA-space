@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven-Segment Display</title>
+    <style rel="stylesheet">
+        @font-face {
+            font-family: '7 Segment';
+            src: url('./7-Segment.eot');
+            src: url('./7-Segment.eot?#iefix') format('embedded-opentype'),
+                url('./7-Segment.woff2') format('woff2'),
+                url('./7-Segment.woff') format('woff'),
+                url('./7-Segment.ttf') format('truetype'),
+                url('./7-Segment.svg#7Segment') format('svg');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .segment-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: '7 Segment', monospace; /* 폰트 변경 */
+        }
+
+        .segment {
+            width: 50px;
+            font-size: 83px;
+            height: 100px;
+            background-color: #ffffff;
+            color: red;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .segment-display:nth-child(3), .segment-display:nth-child(5), .segment-display:nth-child(7) {
+            position: relative;
+            margin-left: -20px;
+        }
+        input[type=number] {
+            margin-top: 10px;
+            width: 30px;
+            height: 22px;
+            text-align: center;
+            border: none;
+            padding-left: 20px;
+        }
+        .address {
+            font-family: initial;
+            margin-bottom: 10px;
+            margin-top: 10px;
+            border: 1px solid #3333;
+            padding: 3px 5px;
+            border-radius: 5px;
+            /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        </style>
+
+</head>
+<body>
+    <div class="container">
+        <div class="title">
+            <div class="address">PORTE</div>
+            <div class="data" style="
+                width: 50px;
+                font-size: 83px;
+                height: 100px;
+            "></div>
+            <div class="address">PORTF</div>
+        </div>
+        <div class="segment-display">
+            <div class="address">0xFE</div>
+            <div class="segment" id="segment1"></div>
+            <input type="number" min="0" max="9" id="input">
+        </div>
+        <div class="segment-display">
+            <div class="address">0xFD</div>
+            <div class="segment" id="segment2"></div>
+            <input type="number" min="0" max="9" id="input">
+        </div>
+        <div class="segment-display">
+            <div class="address">0xFB</div>
+            <div class="segment" id="segment3"></div>
+            <input type="number" min="0" max="9" id="input">
+        </div>
+        <div class="segment-display">
+            <div class="address">0xF7</div>
+            <div class="segment" id="segment4"></div>
+            <input type="number" min="0" max="9" id="input">
+        </div>
+        <div class="segment-display">
+            <div class="address">0xEF</div>
+            <div class="segment" id="segment5"></div>
+            <input type="number" min="0" max="9" id="input">
+        </div>
+        <div class="segment-display">
+            <div class="address">0xDE</div>
+            <div class="segment" id="segment6"></div>
+            <input type="number" min="0" max="9" id="input">
+        </div>
+    </div>
+</body>
+    <script>
+        const segments = document.querySelectorAll('.segment');
+        const inputs = document.querySelectorAll('input[type="number"]')
+
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', () => {
+                const value = parseInt(input.value);
+                if (value >= 0 && value <= 9) {
+                    //segments[index].style.backgroundColor = getColorForNumber(value);
+                    segments[index].innerText = value;
+                } else {
+                    //segments[index].style.backgroundColor = 'lightgray';
+                    segments[index].innerText = '';
+                }
+            });
+        });
+
+        function getColorForNumber(number) {
+            const colors = [
+                'red',
+                'orange',
+                'yellow',
+                'green',
+                'blue',
+                'indigo',
+                'violet',
+                'purple',
+                'pink',
+                'brown',
+                ];
+        return colors[number];
+        }
+    </script>
+</html>
